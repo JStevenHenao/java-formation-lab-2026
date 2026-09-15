@@ -22,13 +22,17 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+// PASO 1
+// Debes agregar la extension de Mockito
+
 class InventoryServiceTest {
 
-    @Mock
+    // PASO 2
+    // Este es el MOCK
     private ICatalogRepository repository;
 
-    @InjectMocks
+    // PASO 3
+    // Este es la clase que vamos a testear apoyándonos de MOCK
     private InventoryService inventoryService;
 
     private ProductDto productDto;
@@ -57,7 +61,8 @@ class InventoryServiceTest {
         @Test
         @DisplayName("Debe retornar el id del producto cuando la creación es exitosa")
         void create_validProduct_returnsId() {
-            when(repository.save(any(Product.class))).thenReturn(product);
+            // PASO 4.1
+            // Adicionar el paso WHEN
 
             String result = inventoryService.create(productDto);
 
@@ -101,7 +106,9 @@ class InventoryServiceTest {
 
             assertDoesNotThrow(() -> inventoryService.update(productDto));
 
-            verify(repository, times(1)).save(any(Product.class));
+            // PASO 4.2
+            // Implementar la sentencia verify para indicar que la actualizacion fue exitosa
+
         }
 
         @Test
@@ -136,7 +143,8 @@ class InventoryServiceTest {
         @Test
         @DisplayName("Debe retornar una lista con un elemento cuando el producto existe")
         void getById_existingId_returnsListWithOneElement() {
-            when(repository.findById("1")).thenReturn(Optional.of(product));
+            // PASO 4.3
+            // Agregar el WHEN
 
             List<ProductDto> result = inventoryService.getById("1");
 
