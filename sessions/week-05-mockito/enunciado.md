@@ -2,17 +2,18 @@
 
 ## Contexto del reto
 
-**Indra Payments** tiene un `PaymentService` que depende de tres colaboradores externos: `PaymentGateway` (llamada HTTP real), `FraudDetector` (servicio ML externo) y `AuditLogger` (escribe en base de datos). Los tests actuales arrancan el contexto completo y son lentos (>30 segundos). Tu tarea es reemplazarlos con tests unitarios rápidos usando Mockito.
+Completar los casos de prueba utilizando Mockito para la clase InventoryService.
+
 
 ## Lo que debes implementar
 
-1. Escribe tests unitarios para `PaymentService.processPayment(PaymentRequest)` usando `@ExtendWith(MockitoExtension.class)`.
-2. Mockea `PaymentGateway`, `FraudDetector` y `AuditLogger`.
+1. Escribe tests unitarios para `InventoryService` usando `@ExtendWith(MockitoExtension.class)`.
+2. Mockea `ICatalogRepository`, `InventoryService`.
 3. Cubre los escenarios:
-   - Pago aprobado: gateway retorna `APPROVED`, fraude no detectado → retorna `PaymentResult.SUCCESS`
-   - Fraude detectado: `FraudDetector` retorna `true` → lanzar `FraudulentPaymentException` y **no** llamar al gateway
-   - Gateway falla: lanza `GatewayException` → `PaymentService` debe propagar como `PaymentProcessingException`
-4. Usa `ArgumentCaptor` para verificar que `AuditLogger` recibió el `PaymentRequest` correcto en el escenario de éxito.
+   - Consulta de productos exitoso. 
+   - Creacion de productos exitoso. 
+   - Actualización de productos exitoso. 
+4. Utiliza los recursos de la libreria Mockito. 
 
 ## Restricciones técnicas (para todos)
 
