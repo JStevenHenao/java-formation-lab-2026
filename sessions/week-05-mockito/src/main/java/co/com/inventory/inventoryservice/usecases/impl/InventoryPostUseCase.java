@@ -13,40 +13,40 @@ import java.util.UUID;
 @Service
 public class InventoryPostUseCase implements IInventoryPostUseCase {
 
+    private final IInventoryService service;
+
     @Autowired
-    IInventoryService service ;
+    public InventoryPostUseCase(IInventoryService service) {
+        this.service = service;
+    }
 
     @Override
     public String create(ProductDto productDto) throws IllegalStateException, IllegalArgumentException {
+        if (productDto == null) {
+            throw new IllegalArgumentException("La información del producto esta vacía!");
+        }
 
-        if(productDto == null)
-            throw new IllegalArgumentException("La información del producto esta vacía!") ;
-
-        if(productDto.getName() == null){
-            throw new IllegalArgumentException("El nombre del producto se encuentra vacío!") ;
+        if (productDto.getName() == null || productDto.getName().isBlank()) {
+            throw new IllegalArgumentException("El nombre del producto se encuentra vacío!");
         }
 
         List<ProductDto> products = new ArrayList<>();
 
-        if(productDto.getId() != null){
+        if (productDto.getId() != null) {
             products = service.getById(productDto.getId());
-
-            if (!products.isEmpty()){
+            if (!products.isEmpty()) {
                 throw new IllegalStateException("El identificador del producto ya existe!");
             }
         }
 
         products = service.getByName(productDto.getName());
-
-        if (!products.isEmpty()){
+        if (!products.isEmpty()) {
             throw new IllegalStateException("Ya existe un producto con ese nombre!");
         }
 
         String id = UUID.randomUUID().toString();
-
         productDto.setId(id);
 
         return service.create(productDto);
-
     }
 }

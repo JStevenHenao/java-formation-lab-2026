@@ -18,44 +18,42 @@ import java.util.stream.Collectors;
 @Service
 public class InventoryService implements IInventoryService {
 
+    private final ICatalogRepository repository;
+    private final ModelMapper modelMapper = new ModelMapper();
+
     @Autowired
-    ICatalogRepository repository ;
-
-
-    ModelMapper modelMapper = new ModelMapper();
-
+    public InventoryService(ICatalogRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public String create(ProductDto productDto) throws IllegalStateException {
-
-        try{
+        try {
             Product product = modelMapper.map(productDto, Product.class);
             product = repository.save(product);
-
             return product.getId();
-        }catch (Exception e){
-            log.error(e.getMessage(), e);
-            throw  new IllegalStateException("Proceso de creación NO exitoso!");
+        } catch (Exception e) {
+            log.error("Error creando producto", e);
+            throw new IllegalStateException("Proceso de creación NO exitoso!");
         }
     }
 
     @Override
     public void update(ProductDto productDto) throws IllegalStateException {
-
-        try{
+        try {
             Product product = modelMapper.map(productDto, Product.class);
             repository.save(product);
-        }catch (Exception e){
-            throw  new IllegalStateException("Proceso de actualizacion NO exitoso!");
+        } catch (Exception e) {
+            log.error("Error actualizando producto", e);
+            throw new IllegalStateException("Proceso de actualizacion NO exitoso!");
         }
     }
 
     @Override
     public List<ProductDto> getById(String id) {
-
         Optional<Product> productOptional = repository.findById(id);
         List<ProductDto> values = new ArrayList<>();
-        if(productOptional.isPresent()){
+        if (productOptional.isPresent()) {
             values.add(modelMapper.map(productOptional.get(), ProductDto.class));
         }
         return values;
@@ -63,12 +61,10 @@ public class InventoryService implements IInventoryService {
 
     @Override
     public List<ProductDto> getByName(String name) {
-
         List<Product> results = repository.findByName(name);
         List<ProductDto> values = new ArrayList<>();
-        if(!results.isEmpty()){
-            values = results
-                    .stream()
+        if (!results.isEmpty()) {
+            values = results.stream()
                     .map(value -> modelMapper.map(value, ProductDto.class))
                     .collect(Collectors.toList());
         }
@@ -77,18 +73,13 @@ public class InventoryService implements IInventoryService {
 
     @Override
     public List<ProductDto> getAll() {
-
         List<Product> results = repository.findAll();
         List<ProductDto> values = new ArrayList<>();
-        if(!results.isEmpty()){
-            values = results
-                    .stream()
+        if (!results.isEmpty()) {
+            values = results.stream()
                     .map(value -> modelMapper.map(value, ProductDto.class))
                     .collect(Collectors.toList());
         }
         return values;
-
     }
-
-
 }

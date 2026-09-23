@@ -18,23 +18,16 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-        import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// PASO 1
-// Debes agregar la extension de Mockito
-
+@ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
 
-    // PASO 2
-    // Este es el MOCK
-    
+    @Mock
     private ICatalogRepository repository;
 
-    // PASO 3
-    // Este es la clase que vamos a testear apoyándonos de MOCK
-    
+    @InjectMocks
     private InventoryService inventoryService;
 
     private ProductDto productDto;
@@ -45,17 +38,18 @@ class InventoryServiceTest {
         productDto = new ProductDto();
         productDto.setId("1");
         productDto.setName("Producto A");
-        // ajusta setters según los campos reales de ProductDto
+        productDto.setDescription("Descripción del producto A");
+        productDto.setUnits("UN");
+        productDto.setQuantity(10.0);
 
         product = new Product();
         product.setId("1");
         product.setName("Producto A");
-        // ajusta setters según los campos reales de Product
+        product.setDescription("Descripción del producto A");
+        product.setUnits("UN");
+        product.setQuantity(10.0);
     }
 
-    // ----------------------------------------------------------------
-    // CREATE
-    // ----------------------------------------------------------------
     @Nested
     @DisplayName("create")
     class CreateTests {
@@ -63,9 +57,7 @@ class InventoryServiceTest {
         @Test
         @DisplayName("Debe retornar el id del producto cuando la creación es exitosa")
         void create_validProduct_returnsId() {
-            // PASO 4.1
-            // Adicionar el paso WHEN
-            
+            when(repository.save(any(Product.class))).thenReturn(product);
 
             String result = inventoryService.create(productDto);
 
@@ -95,9 +87,6 @@ class InventoryServiceTest {
         }
     }
 
-    // ----------------------------------------------------------------
-    // UPDATE
-    // ----------------------------------------------------------------
     @Nested
     @DisplayName("update")
     class UpdateTests {
@@ -109,9 +98,7 @@ class InventoryServiceTest {
 
             assertDoesNotThrow(() -> inventoryService.update(productDto));
 
-            // PASO 4.2
-            // Implementar la sentencia verify para indicar que la actualizacion fue exitosa
-            
+            verify(repository, times(1)).save(any(Product.class));
         }
 
         @Test
@@ -136,9 +123,6 @@ class InventoryServiceTest {
         }
     }
 
-    // ----------------------------------------------------------------
-    // GET BY ID
-    // ----------------------------------------------------------------
     @Nested
     @DisplayName("getById")
     class GetByIdTests {
@@ -146,9 +130,8 @@ class InventoryServiceTest {
         @Test
         @DisplayName("Debe retornar una lista con un elemento cuando el producto existe")
         void getById_existingId_returnsListWithOneElement() {
-            // PASO 4.3
-            // Agregar el WHEN
-            
+            when(repository.findById("1")).thenReturn(Optional.of(product));
+
             List<ProductDto> result = inventoryService.getById("1");
 
             assertEquals(1, result.size());
@@ -168,9 +151,6 @@ class InventoryServiceTest {
         }
     }
 
-    // ----------------------------------------------------------------
-    // GET BY NAME
-    // ----------------------------------------------------------------
     @Nested
     @DisplayName("getByName")
     class GetByNameTests {
@@ -199,9 +179,6 @@ class InventoryServiceTest {
         }
     }
 
-    // ----------------------------------------------------------------
-    // GET ALL
-    // ----------------------------------------------------------------
     @Nested
     @DisplayName("getAll")
     class GetAllTests {

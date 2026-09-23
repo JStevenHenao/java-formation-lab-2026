@@ -12,38 +12,42 @@ import java.util.List;
 @Service
 public class InventoryPatchUseCase implements IInventoryPatchUseCase {
 
+    private final IInventoryService service;
+
     @Autowired
-    IInventoryService service ;
+    public InventoryPatchUseCase(IInventoryService service) {
+        this.service = service;
+    }
 
     @Override
     public void update(String id, ProductDto productDto) throws IllegalStateException, IllegalArgumentException {
-
-        if(id == null || productDto == null)
+        if (id == null || id.isBlank() || productDto == null) {
             throw new IllegalArgumentException("El registro no esta especificado para actualizar!");
+        }
 
         List<ProductDto> producto = service.getById(id);
-
-        if(producto.isEmpty()){
-            throw new IllegalPathStateException("El registro no existe!");
+        if (producto.isEmpty()) {
+            throw new IllegalStateException("El registro no existe!");
         }
 
-        if(productDto.getDescription() != null){
-            producto.get(0).setDescription(productDto.getDescription());
+        ProductDto current = producto.get(0);
+
+        if (productDto.getDescription() != null) {
+            current.setDescription(productDto.getDescription());
         }
 
-        if(productDto.getName() != null){
-            producto.get(0).setName(productDto.getName());
+        if (productDto.getName() != null) {
+            current.setName(productDto.getName());
         }
 
-        if(productDto.getUnits() != null){
-            producto.get(0).setUnits(productDto.getUnits());
+        if (productDto.getUnits() != null) {
+            current.setUnits(productDto.getUnits());
         }
 
-        if(productDto.getQuantity() != null){
-            producto.get(0).setQuantity(productDto.getQuantity());
+        if (productDto.getQuantity() != null) {
+            current.setQuantity(productDto.getQuantity());
         }
 
-        service.update(producto.get(0));
-
+        service.update(current);
     }
 }

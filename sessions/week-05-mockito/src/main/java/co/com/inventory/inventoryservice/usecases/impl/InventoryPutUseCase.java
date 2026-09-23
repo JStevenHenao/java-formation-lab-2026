@@ -12,24 +12,24 @@ import java.util.List;
 @Service
 public class InventoryPutUseCase implements IInventoryPutUseCase {
 
+    private final IInventoryService service;
+
     @Autowired
-    IInventoryService service ;
+    public InventoryPutUseCase(IInventoryService service) {
+        this.service = service;
+    }
 
     @Override
     public void update(ProductDto productDto) throws IllegalStateException, IllegalArgumentException {
-
-        if(productDto == null)
+        if (productDto == null) {
             throw new IllegalArgumentException("El registro no esta especificado para actualizar!");
+        }
 
         List<ProductDto> products = service.getById(productDto.getId());
-
-        if(products.isEmpty()){
-            throw new IllegalPathStateException("El registro no existe!");
+        if (products.isEmpty()) {
+            throw new IllegalStateException("El registro no existe!");
         }
 
         service.update(productDto);
-
     }
-
-
 }
