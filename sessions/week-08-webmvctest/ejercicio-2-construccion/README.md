@@ -1,6 +1,6 @@
 # Ejercicio 2 — Construcción: catálogo de productos
 
-> **Tipo**: construir desde cero. Solo tienes `ProductCatalogApplication.java` (el `main`) y el `pom.xml`.
+> **Tipo**: API de catálogo implementada con arquitectura hexagonal, seguridad por roles y pruebas por capas.
 
 ## Contexto
 
@@ -95,6 +95,10 @@ mvn -pl ejercicio-2-construccion verify
 # Medición del criterio no funcional:
 mvn -pl ejercicio-2-construccion test -Dtest='ProductControllerTest*'
 ```
+
+Para ejecutar la aplicación fuera de tests, define `PRODUCT_EDITOR_PASSWORD` y `PRODUCT_ADMIN_PASSWORD` como secretos del entorno. Los tests usan credenciales aisladas y no dependen de secretos locales.
+
+Las pruebas web importan `SecurityConfig` explícitamente porque `@WebMvcTest` no busca configuraciones arbitrarias de infraestructura. El smoke test es el único `@SpringBootTest`; el resto no crea un contexto completo ni una base de datos.
 
 > ⚠️ Con Spring Security en el classpath, `@WebMvcTest` aplica la seguridad por defecto, **no** la tuya,
 > a menos que la importes. Entender por qué es parte del reto.

@@ -1,50 +1,33 @@
 package com.indra.catalog.suppliers.domain;
 
-public class Supplier {
+import java.util.Locale;
+import java.util.Objects;
 
-    private String id;
-    private String name;
-    private String taxId;
-    private String email;
-    private String internalNotes;
+public record Supplier(String id, String name, String taxId, String email) {
 
-    public String getId() {
-        return id;
+    public Supplier {
+        name = Objects.requireNonNull(name, "name").strip().toUpperCase(Locale.ROOT);
+        taxId = Objects.requireNonNull(taxId, "taxId").strip().replace(".", "");
+        email = Objects.requireNonNull(email, "email").strip();
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("Supplier name is required");
+        }
+        if (!taxId.matches("[0-9]{9,11}-[0-9]")) {
+            throw new IllegalArgumentException("Supplier tax id is invalid");
+        }
+        if (!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
+            throw new IllegalArgumentException("Supplier email is invalid");
+        }
+        if (id != null && id.isBlank()) {
+            throw new IllegalArgumentException("Supplier id cannot be blank");
+        }
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public static Supplier create(String name, String taxId, String email) {
+        return new Supplier(null, name, taxId, email);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getTaxId() {
-        return taxId;
-    }
-
-    public void setTaxId(String taxId) {
-        this.taxId = taxId;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getInternalNotes() {
-        return internalNotes;
-    }
-
-    public void setInternalNotes(String internalNotes) {
-        this.internalNotes = internalNotes;
+    public Supplier withId(String id) {
+        return new Supplier(id, name, taxId, email);
     }
 }
