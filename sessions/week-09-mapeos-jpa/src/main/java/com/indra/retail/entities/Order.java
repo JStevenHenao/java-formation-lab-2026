@@ -1,31 +1,26 @@
 package com.indra.retail.entities;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Pedido. La tabla se llama "orders" porque ORDER es palabra reservada en SQL.
- *
- * MODELO INICIAL CON DEFECTOS A PROPÓSITO (ver enunciado.md):
- * TODO(participante):
- *  - customer: pasar a LAZY y quitar el cascade (un pedido no gestiona al cliente).
- *  - items: cascade = {PERSIST, MERGE} en vez de ALL, y orphanRemoval = true.
- *  - status: reemplazar el String por un enum OrderStatus (PENDING, CONFIRMED, SHIPPED)
- *    mapeado con @Enumerated(EnumType.STRING).
- *  - status y createdAt: obligatorios.
- *  - customer_id obligatorio (agregar @JoinColumn(name = "customer_id", nullable = false)).
- */
+/** Pedido. La tabla evita la palabra reservada SQL ORDER. */
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -34,40 +29,52 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String status = "PENDING";
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private OrderStatus status = OrderStatus.PENDING;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
     protected Order() {
-      
     }
 
     public Order(Customer customer) {
-        this.customer = customer;
+        this.customer = Objects.requireNonNull(customer, "customer is required");
     }
 
-    
-    public void addItem(OrderItem item) {
+    public OrderItem addItem(Product product, int quantity, java.math.BigDecimal unitPrice) {
+        OrderItem item = new OrderItem(this, product, quantity, unitPrice);
         items.add(item);
-        item.setOrder(this);
+        return item;
+    }
+
+    public boolean removeItem(OrderItem item) {
+        if (!items.remove(item)) {
+            return false;
+        }
+        item.detachFrom(this);
+        return true;
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setStatus(OrderStatus status) {
+        this.status = Objects.requireNonNull(status, "status is required");
     }
 
     public LocalDateTime getCreatedAt() {
@@ -79,6 +86,6 @@ public class Order {
     }
 
     public List<OrderItem> getItems() {
-        return items;
+        return Collections.unmodifiableList(items);
     }
 }

@@ -1,8 +1,9 @@
 package com.indra.retail.manager;
 
 import com.indra.retail.entities.Customer;
+import com.indra.retail.entities.Address;
 import com.indra.retail.entities.Order;
-import com.indra.retail.entities.OrderItem;
+import com.indra.retail.entities.OrderStatus;
 import com.indra.retail.entities.Product;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -91,13 +92,38 @@ class EntityManagerRecordManagerTest {
             Customer customer = manager.create(new Customer("Marta", uniqueEmail()));
             Product product = manager.create(new Product("Monitor", new BigDecimal("300.00"), 3));
             Order order = new Order(customer);
-            order.addItem(new OrderItem(product, 2, product.getPrice()));
+            order.addItem(product, 2, product.getPrice());
             manager.create(order);
             return new Long[] {order.getId(), customer.getId()};
         });
 
         Order found = manager.findById(Order.class, ids[0]).orElseThrow();
-        assertEquals("PENDING", found.getStatus());
+        assertEquals(OrderStatus.PENDING, found.getStatus());
         assertEquals(ids[1], found.getCustomer().getId());
+    }
+
+    @Test
+    @DisplayName("Persiste Address dentro de Customer")
+    void shouldPersistCustomerAddress() {
+        Address address = new Address("Carrera 7 # 12-34", "Bogota", "Cundinamarca", "110111", "Colombia");
+        Customer saved = manager.create(new Customer("Sara", uniqueEmail(), address));
+
+        Customer found = manager.findById(Customer.class, saved.getId()).orElseThrow();
+
+        assertEquals("Carrera 7 # 12-34", found.getAddress().getStreet());
+        assertEquals("Bogota", found.getAddress().getCity());
+    }
+
+    @Test
+    @DisplayName("Incrementa la versión del Product al actualizarlo")
+    void shouldIncrementProductVersion() {
+        Product saved = manager.create(new Product("Mouse", new BigDecimal("20.00"), 10));
+        Long initialVersion = saved.getVersion();
+
+        saved.setStock(7);
+        manager.update(saved);
+
+        Product updated = manager.findById(Product.class, saved.getId()).orElseThrow();
+        assertEquals(initialVersion + 1, updated.getVersion());
     }
 }

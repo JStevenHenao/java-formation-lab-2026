@@ -1,12 +1,12 @@
 package com.indra.retail.manager;
 
 import com.indra.retail.entities.Customer;
+import com.indra.retail.entities.Address;
 import com.indra.retail.entities.Order;
 import com.indra.retail.entities.OrderItem;
 import com.indra.retail.entities.Product;
 import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class LazyLoadingTest {
@@ -29,6 +32,8 @@ class LazyLoadingTest {
     private TransactionTemplate transactionTemplate;
 
     private Long orderId;
+    private Long itemId;
+    private Long productId;
 
     @BeforeEach
     void createOrderWithItems() {
@@ -38,8 +43,11 @@ class LazyLoadingTest {
             Customer customer = manager.create(new Customer("Carla", UUID.randomUUID() + "@indra.com"));
             Product product = manager.create(new Product("Laptop", new BigDecimal("1500.00"), 4));
             Order order = new Order(customer);
-            order.addItem(new OrderItem(product, 1, product.getPrice()));
-            return manager.create(order).getId();
+            OrderItem item = order.addItem(product, 1, product.getPrice());
+            manager.create(order);
+            itemId = item.getId();
+            productId = product.getId();
+            return order.getId();
         });
     }
 
@@ -66,34 +74,65 @@ class LazyLoadingTest {
     // ───────────────────────── Retos para participantes ─────────────────────────
 
     @Test
-    @Disabled("TODO(participante): habilitar tras cambiar las relaciones a LAZY")
     @DisplayName("Customer de un Order no se carga hasta que se usa (LAZY)")
     void shouldLoadCustomerLazily() {
-        // TODO: con Order.customer en LAZY, acceder a order.getCustomer().getName()
-        // fuera de la transacción debe lanzar LazyInitializationException,
-        // y dentro de una transacción debe funcionar.
+        Order detachedOrder = manager.findById(Order.class, orderId).orElseThrow();
+        assertThrows(LazyInitializationException.class,
+            () -> detachedOrder.getCustomer().getName());
+
+        String customerName = transactionTemplate.execute(status ->
+            manager.findById(Order.class, orderId).orElseThrow().getCustomer().getName());
+        assertEquals("Carla", customerName);
     }
 
     @Test
-    @Disabled("TODO(participante): habilitar tras configurar orphanRemoval = true")
     @DisplayName("Quitar un ítem de la lista elimina la fila (orphanRemoval)")
     void shouldRemoveOrphanItem() {
-        // TODO: dentro de una transacción, quitar un ítem de order.getItems()
-        // y verificar que ya no existe en la base de datos.
+        transactionTemplate.executeWithoutResult(status -> {
+            Order order = manager.findById(Order.class, orderId).orElseThrow();
+            assertTrue(order.removeItem(order.getItems().get(0)));
+        });
+
+        assertFalse(manager.findById(OrderItem.class, itemId).isPresent());
     }
 
     @Test
-    @Disabled("TODO(participante): habilitar tras hacer order_id NOT NULL")
     @DisplayName("No se puede guardar un OrderItem sin Order")
     void shouldRejectOrphanOrderItem() {
-        // TODO: persistir un OrderItem sin Order debe fallar
-        // (p. ej. DataIntegrityViolationException / ConstraintViolationException).
+        Product product = manager.findById(Product.class, productId).orElseThrow();
+        assertThrows(NullPointerException.class,
+                () -> new OrderItem(null, product, 1, new BigDecimal("1.00")));
     }
 
     @Test
-    @Disabled("TODO(participante): habilitar tras quitar cascade desde OrderItem hacia Product")
     @DisplayName("Borrar un OrderItem no borra el Product")
     void shouldNotDeleteProductWhenDeletingItem() {
-        // TODO: eliminar un OrderItem y verificar que su Product sigue existiendo.
+        assertTrue(manager.delete(OrderItem.class, itemId));
+        assertTrue(manager.findById(Product.class, productId).isPresent());
+    }
+
+    @Test
+    @DisplayName("Customer persiste Address como columnas embebidas")
+    void shouldPersistEmbeddedAddress() {
+        Address address = new Address("Calle 100 # 10-20", "Bogota", "Cundinamarca", "110111", "Colombia");
+        Customer customer = manager.create(new Customer("Lucia", UUID.randomUUID() + "@indra.com", address));
+
+        Customer loaded = manager.findById(Customer.class, customer.getId()).orElseThrow();
+        assertEquals("Calle 100 # 10-20", loaded.getAddress().getStreet());
+        assertEquals("Bogota", loaded.getAddress().getCity());
+    }
+
+    @Test
+    @DisplayName("Product usa @Version para control de concurrencia optimista")
+    void shouldIncrementProductVersionOnUpdate() {
+        Product product = manager.create(new Product("Keyboard", new BigDecimal("80.00"), 5));
+        Long initialVersion = product.getVersion();
+        assertNotNull(initialVersion);
+
+        product.setStock(4);
+        manager.update(product);
+
+        Product updated = manager.findById(Product.class, product.getId()).orElseThrow();
+        assertEquals(initialVersion + 1, updated.getVersion());
     }
 }
